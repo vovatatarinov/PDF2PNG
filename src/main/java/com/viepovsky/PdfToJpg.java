@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 abstract class PdfToJpg {
-    static void convert(String pathToPdf, String pathToJpg) {
+    static void convert(String pathToPdf) {
         try {
             PDDocument document = PDDocument.load(new File(pathToPdf));
 
@@ -18,7 +18,7 @@ abstract class PdfToJpg {
 
             for (int i = 0; i < document.getNumberOfPages(); i++) {
                 String random = UUID.randomUUID().toString();
-                String path = String.format("%s%d-%s.jpg", pathToJpg, i, random);
+                String path = String.format("%s%d-%s.jpg", pathToPdf, i, random);
                 BufferedImage image = renderer.renderImageWithDPI(i, 300);
                 ImageIO.write(image, "jpg", new File(path));
             }
