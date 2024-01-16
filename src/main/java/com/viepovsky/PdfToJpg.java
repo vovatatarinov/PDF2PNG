@@ -5,69 +5,64 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 abstract class PdfToJpg {
+
     private static File pdfToConvert;
-    private static File outputDirectory;
+
+    private static PDDocument pdfDocument;
+
+    private static PDFRenderer pdfRenderer;
 
     static void convert(String pathToPdf) {
         try {
-            pdfToConvert = new File(pathToPdf);
+            initPdfFileDocumentAndRenderer(pathToPdf);
 
-            PDDocument document = PDDocument.load(pdfToConvert);
+            ZipOutputStream zipOutputStream = createZipOutputStream();
 
-            PDFRenderer renderer = new PDFRenderer(document);
-
-            createOutputDirectory();
-
-            String zipPath = outputDirectory.getPath() + ".zip";
-            ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipPath));
-
-            for (int page = 0; page < document.getNumberOfPages(); page++) {
-                String jpgPath = getJpgOutputPathAndUniqueName(page);
-                BufferedImage jpgImage = renderer.renderImageWithDPI(page, 300);
-                ImageIO.write(jpgImage, "jpg", new File(jpgPath));
-
-                File fileToZip = new File(jpgPath);
-                ZipEntry ze = new ZipEntry(fileToZip.getName());
-                zipOut.putNextEntry(ze);
-                Files.copy(fileToZip.toPath(), zipOut);
-                fileToZip.delete();
+            for (int page = 0; page < pdfDocument.getNumberOfPages(); page++) {
+                String jpgPath = createOutputPath(page);
+                convertPdfToImage(jpgPath, page);
+                putImageInZip(zipOutputStream, jpgPath);
             }
 
-            outputDirectory.delete();
+            zipOutputStream.closeEntry();
+            zipOutputStream.close();
 
-            zipOut.closeEntry();
-            zipOut.close();
-
-            document.close();
+            pdfDocument.close();
         } catch (IOException e) {
             System.out.println("Could not convert PDF to JPG");
             System.out.println(e.getMessage());
         }
     }
 
-    private static void createOutputDirectory() {
+    private static void initPdfFileDocumentAndRenderer(String pathToPdf) throws IOException {
+        pdfToConvert = new File(pathToPdf);
+        pdfDocument = PDDocument.load(pdfToConvert);
+        pdfRenderer = new PDFRenderer(pdfDocument);
+    }
+
+    private static ZipOutputStream createZipOutputStream() throws FileNotFoundException {
+        String zipPath = createOutputPath();
+        FileOutputStream out = new FileOutputStream(zipPath);
+        return new ZipOutputStream(out);
+    }
+
+    private static String createOutputPath() {
         String path = pdfToConvert.getParent();
         String name = getPdfNameWithoutExtension();
         String uuid = UUID.randomUUID().toString();
 
-        String directoryPathAndName = path + "\\" + name + "-" + uuid;
-        outputDirectory = new File(directoryPathAndName);
-
-        if (outputDirectory.mkdir()) System.out.println("Utworzono katalog");
-        else System.out.println("Nie utworzono katalogu");
+        return path + "\\" + name + "-" + uuid + ".zip";
     }
 
-    private static String getJpgOutputPathAndUniqueName(int page) {
-        String path = outputDirectory.getPath();
+    private static String createOutputPath(int page) {
+        String path = pdfToConvert.getParent();
         String name = getPdfNameWithoutExtension();
         String uuid = UUID.randomUUID().toString();
 
@@ -78,5 +73,18 @@ abstract class PdfToJpg {
         return pdfToConvert.getName()
                 .toLowerCase()
                 .replaceAll(".pdf", "");
+    }
+
+    private static void convertPdfToImage(String jpgPath, int page) throws IOException {
+        BufferedImage jpgImage = pdfRenderer.renderImageWithDPI(page, 300);
+        ImageIO.write(jpgImage, "jpg", new File(jpgPath));
+    }
+
+    private static void putImageInZip(ZipOutputStream zipOutputStream, String jpgPath) throws IOException {
+        File fileToZip = new File(jpgPath);
+        ZipEntry ze = new ZipEntry(fileToZip.getName());
+        zipOutputStream.putNextEntry(ze);
+        Files.copy(fileToZip.toPath(), zipOutputStream);
+        fileToZip.delete();
     }
 }
