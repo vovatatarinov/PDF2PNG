@@ -6,8 +6,12 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 abstract class PdfToJpg {
     private static File pdfToConvert;
@@ -23,11 +27,25 @@ abstract class PdfToJpg {
 
             createOutputDirectory();
 
+            String zipPath = outputDirectory.getPath() + ".zip";
+            ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipPath));
+
             for (int page = 0; page < document.getNumberOfPages(); page++) {
                 String jpgPath = getJpgOutputPathAndUniqueName(page);
                 BufferedImage jpgImage = renderer.renderImageWithDPI(page, 300);
                 ImageIO.write(jpgImage, "jpg", new File(jpgPath));
+
+                File fileToZip = new File(jpgPath);
+                ZipEntry ze = new ZipEntry(fileToZip.getName());
+                zipOut.putNextEntry(ze);
+                Files.copy(fileToZip.toPath(), zipOut);
+                fileToZip.delete();
             }
+
+            outputDirectory.delete();
+
+            zipOut.closeEntry();
+            zipOut.close();
 
             document.close();
         } catch (IOException e) {
