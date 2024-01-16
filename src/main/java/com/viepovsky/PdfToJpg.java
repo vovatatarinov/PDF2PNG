@@ -10,17 +10,21 @@ import java.io.IOException;
 import java.util.UUID;
 
 abstract class PdfToJpg {
-    private static File pdf;
+    private static File pdfToConvert;
+    private static File outputDirectory;
+
     static void convert(String pathToPdf) {
         try {
-            pdf = new File(pathToPdf);
+            pdfToConvert = new File(pathToPdf);
 
-            PDDocument document = PDDocument.load(pdf);
+            PDDocument document = PDDocument.load(pdfToConvert);
 
             PDFRenderer renderer = new PDFRenderer(document);
 
+            createOutputDirectory();
+
             for (int page = 0; page < document.getNumberOfPages(); page++) {
-                String jpgPath = generatePathAndFileName(page);
+                String jpgPath = getJpgOutputPathAndUniqueName(page);
                 BufferedImage jpgImage = renderer.renderImageWithDPI(page, 300);
                 ImageIO.write(jpgImage, "jpg", new File(jpgPath));
             }
@@ -32,9 +36,29 @@ abstract class PdfToJpg {
         }
     }
 
-    private static String generatePathAndFileName(int page) {
-        String pdfName = pdf.getName();
+    private static void createOutputDirectory() {
+        String path = pdfToConvert.getParent();
+        String name = getPdfNameWithoutExtension();
         String uuid = UUID.randomUUID().toString();
-        return String.format("%s%d-%s", pdfName, page, uuid);
+
+        String directoryPathAndName = path + "\\" + name + "-" + uuid;
+        outputDirectory = new File(directoryPathAndName);
+
+        if (outputDirectory.mkdir()) System.out.println("Utworzono katalog");
+        else System.out.println("Nie utworzono katalogu");
+    }
+
+    private static String getJpgOutputPathAndUniqueName(int page) {
+        String path = outputDirectory.getPath();
+        String name = getPdfNameWithoutExtension();
+        String uuid = UUID.randomUUID().toString();
+
+        return String.format("%s\\%s-%d-%s.jpg", path, name, page, uuid);
+    }
+
+    private static String getPdfNameWithoutExtension() {
+        return pdfToConvert.getName()
+                .toLowerCase()
+                .replaceAll(".pdf", "");
     }
 }
