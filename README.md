@@ -1,10 +1,9 @@
-# File Converter -> PDF to JPG
-This is a simple app made in need of converting one and multi page PDF files to images in `.jpg` extension.
+# File Converter -> PDF to PNG
+This is a simple app made in need of converting one and multi page PDF files to images in `.png` extension.
 
 ### Usage
-To use app, you can simply run `MainView.java` in IDE of your choice or you can 
-use `mvn clean package` command to create executable `java.jar` file. Then run the jar.
-After running simply select the PDF file you want to convert. 
+To use app, you can simply run `Main.java` in IDE of your choice. Then run the jar.
+After running simply select the PDF file you want to convert.
 
 The converted PDF will be created in the same directory, inside the archived `.zip`
 
