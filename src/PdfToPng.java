@@ -1,9 +1,9 @@
-package com.viepovsky;
-
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-abstract class PdfToJpg {
+abstract class PdfToPng {
 
     private static File pdfToConvert;
 
@@ -26,9 +26,9 @@ abstract class PdfToJpg {
             ZipOutputStream zipOutputStream = createZipOutputStream();
 
             for (int page = 0; page < pdfDocument.getNumberOfPages(); page++) {
-                String jpgPath = createOutputPath(page);
-                convertPdfToImage(jpgPath, page);
-                putImageInZip(zipOutputStream, jpgPath);
+                String pngPath = createOutputPath(page);
+                convertPdfToImage(pngPath, page);
+                putImageInZip(zipOutputStream, pngPath);
             }
 
             zipOutputStream.closeEntry();
@@ -36,14 +36,14 @@ abstract class PdfToJpg {
 
             pdfDocument.close();
         } catch (IOException e) {
-            System.out.println("Could not convert PDF to JPG");
-            System.out.println(e.getMessage());
+            JOptionPane.showMessageDialog(null, "Could not convert PDF to PNG" +
+                    "\r\n" + e.getMessage());
         }
     }
 
     private static void initPdfFileDocumentAndRenderer(String pathToPdf) throws IOException {
         pdfToConvert = new File(pathToPdf);
-        pdfDocument = PDDocument.load(pdfToConvert);
+        pdfDocument = Loader.loadPDF(pdfToConvert);
         pdfRenderer = new PDFRenderer(pdfDocument);
     }
 
@@ -66,7 +66,7 @@ abstract class PdfToJpg {
         String name = getPdfNameWithoutExtension();
         String uuid = UUID.randomUUID().toString();
 
-        return String.format("%s\\%s-%d-%s.jpg", path, name, page, uuid);
+        return String.format("%s\\%s-%06d-%s.png", (Object) path, (Object) name, (Object) page, uuid);
     }
 
     private static String getPdfNameWithoutExtension() {
@@ -75,16 +75,16 @@ abstract class PdfToJpg {
                 .replaceAll(".pdf", "");
     }
 
-    private static void convertPdfToImage(String jpgPath, int page) throws IOException {
-        BufferedImage jpgImage = pdfRenderer.renderImageWithDPI(page, 300);
-        ImageIO.write(jpgImage, "jpg", new File(jpgPath));
+    private static void convertPdfToImage(String pngPath, int page) throws IOException {
+        BufferedImage pngImage = pdfRenderer.renderImageWithDPI(page, 300);
+        ImageIO.write(pngImage, "png", new File(pngPath));
     }
 
-    private static void putImageInZip(ZipOutputStream zipOutputStream, String jpgPath) throws IOException {
-        File fileToZip = new File(jpgPath);
+    private static void putImageInZip(ZipOutputStream zipOutputStream, String pngPath) throws IOException {
+        File fileToZip = new File(pngPath);
         ZipEntry ze = new ZipEntry(fileToZip.getName());
         zipOutputStream.putNextEntry(ze);
         Files.copy(fileToZip.toPath(), zipOutputStream);
-        fileToZip.delete();
+        boolean delRes = fileToZip.delete();
     }
 }
