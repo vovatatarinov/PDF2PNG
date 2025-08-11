@@ -7,7 +7,6 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -56,17 +55,15 @@ abstract class PdfToPng {
     private static String createOutputPath() {
         String path = pdfToConvert.getParent();
         String name = getPdfNameWithoutExtension();
-        String uuid = UUID.randomUUID().toString();
 
-        return path + "\\" + name + "-" + uuid + ".zip";
+        return path + "\\" + name + ".zip";
     }
 
     private static String createOutputPath(int page) {
         String path = pdfToConvert.getParent();
         String name = getPdfNameWithoutExtension();
-        String uuid = UUID.randomUUID().toString();
 
-        return String.format("%s\\%s-%06d-%s.png", (Object) path, (Object) name, (Object) page, uuid);
+        return String.format("%s\\%s-%06d.png", (Object) path, (Object) name, (Object) page);
     }
 
     private static String getPdfNameWithoutExtension() {
